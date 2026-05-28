@@ -3,9 +3,11 @@ let kameraStream = null;
 let pengenalSuara = null;
 
 $(document).ready(function() {
+    // Splash screen menghilang setelah 2 detik, lalu memunculkan halaman login
     setTimeout(() => {
-        $('#splash-screen').fadeOut();
-        $('#login-page').fadeIn();
+        $('#splash-screen').fadeOut(function() {
+            $('#login-page').fadeIn();
+        });
     }, 2000);
     
     loadTasks();
@@ -46,11 +48,20 @@ function showToast(message) {
 // MANAGEMENT JADWAL KULIAH DARI FILE JSON
 function loadSchedule() {
     $.getJSON('jadwal.json', function(data) {
+        // Validasi awal untuk memastikan data JSON yang diterima berbentuk Array valid
+        if (!data || !Array.isArray(data)) {
+            $('#schedule-list').html('<div class="text-center py-3 text-muted small">Format data jadwal tidak valid.</div>');
+            tampilkanHighlightBawaan();
+            return;
+        }
+
         const urutanHari = ["Senin", "Selasa", "Kamis", "Jumat"];
         let kelompokJadwal = { "Senin": [], "Selasa": [], "Kamis": [], "Jumat": [] };
 
         data.forEach(item => {
-            if (kelompokJadwal[item.hari]) kelompokJadwal[item.hari].push(item);
+            if (item && item.hari && kelompokJadwal[item.hari]) {
+                kelompokJadwal[item.hari].push(item);
+            }
         });
 
         let listHtml = '';
@@ -80,10 +91,10 @@ function loadSchedule() {
         });
         $('#schedule-list').html(listHtml);
 
-        // AREA HIGHLIGHT BERANDA UTAMA
+        // AREA HIGHLIGHT BERANDA UTAMA (DASHBOARD)
         const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
         let highlightHtml = '';
-        const matkulHariIni = data.filter(item => item.hari.toLowerCase() === hariIni.toLowerCase());
+        const matkulHariIni = data.filter(item => item && item.hari && item.hari.toLowerCase() === hariIni.toLowerCase());
 
         if (matkulHariIni.length > 0) {
             highlightHtml += `<p class="text-success small fw-bold mb-1">✨ ${matkulHariIni.length} Kelas Hari Ini (${hariIni}):</p>`;
@@ -99,7 +110,19 @@ function loadSchedule() {
             highlightHtml = `<div class="text-center py-2 text-muted small" style="font-size: 0.75rem;">😎 Hari ini (${hariIni}) tidak ada jadwal kuliah.</div>`;
         }
         $('#schedule-highlight').html(highlightHtml);
+
+    }).fail(function() {
+        // Cegah aplikasi stuck jika jadwal.json error 404 (tidak ditemukan) saat deploy
+        console.error("Gagal memuat file jadwal.json. Pastikan file tersedia di root folder.");
+        $('#schedule-list').html('<div class="text-center py-3 text-muted small">Gagal memuat daftar jadwal kuliahan.</div>');
+        tampilkanHighlightBawaan();
     });
+}
+
+// Fungsi pembantu pendukung jika pembacaan file JSON gagal
+function tampilkanHighlightBawaan() {
+    const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
+    $('#schedule-highlight').html(`<div class="text-center py-2 text-muted small" style="font-size: 0.75rem;">😎 Hari ini (${hariIni}) tidak ada jadwal kuliah.</div>`);
 }
 
 // STORAGE TUGAS / MISI
@@ -133,13 +156,15 @@ function loadTasks() {
     $('#task-list').html(html);
 }
 
-// AMBIL API RANDOM QUOTE ACADEMIC
+// AMBUL API RANDOM QUOTE ACADEMIC
 async function fetchQuote() {
     try {
         const response = await fetch('https://api.quotable.io/random');
+        if (!response.ok) throw new Error('API Error');
         const data = await response.json();
         $('#quote-area').text(`"${data.content}" - ${data.author}`);
     } catch (e) {
+        // Fallback jika API eksternal down, teks bawaan ini tetap muncul
         $('#quote-area').text("Tetap semangat kuliah di Universitas Ma'soem!");
     }
 }
@@ -206,7 +231,7 @@ function jalankanFitur(nomor) {
                         <strong>Lokasi Anda Berhasil Dikunci:</strong><br>
                         Latitude: <span class='text-indigo'>${lat}</span><br>
                         Longitude: <span class='text-indigo'>${lon}</span><br>
-                        <a href='https://www.google.com/maps?q=${lat},${lon}' target='_blank' class='btn btn-xs btn-outline-indigo mt-2 py-0.5 px-2' style='font-size:0.7rem; text-decoration:none;'>Buka Peta Google</a>
+                        <a href='https://maps.google.com/?q=${lat},${lon}' target='_blank' class='btn btn-xs btn-outline-indigo mt-2 py-0.5 px-2' style='font-size:0.7rem; text-decoration:none;'>Buka Peta Google</a>
                     `);
                     showToast("Lokasi Berhasil Didapatkan!");
                 },
@@ -252,6 +277,7 @@ function matikanKamera() {
     }
 }
 
+// Fungsi Pendukung menonaktifkan kamera via tombol interface
 function matikanKameraDanTutup() {
     matikanKamera();
     $('#webcam-preview').addClass('d-none');
@@ -263,25 +289,29 @@ function matikanKameraDanTutup() {
 // Fungsi Pendukung Tambahan Fitur Voice Recognition
 function mulaiMendengar() {
     if (pengenalSuara) {
-        pengenalSuara.start();
-        $('#konten-hasil').html("<span class='text-danger fw-bold animate-pulse'>🎙️ Sedang mendengarkan...</span> Bicaralah sekarang.");
-        $('#btn-action-fitur').text("Mendengarkan...").attr('disabled', true);
+        try {
+            pengenalSuara.start();
+            $('#konten-hasil').html("<span class='text-danger fw-bold'>🎙️ Sedang mendengarkan...</span> Bicaralah sekarang.");
+            $('#btn-action-fitur').text("Mendengarkan...").attr('disabled', true);
 
-        pengenalSuara.onresult = function(event) {
-            let hasilTeks = event.results[0][0].transcript;
-            $('#konten-hasil').html(`Hasil deteksi suara:<br><strong class='text-indigo' style='font-size:0.85rem;'>"${hasilTeks}"</strong>`);
-            resetTombolVoice();
-            showToast("Suara berhasil dikonversi!");
-        };
+            pengenalSuara.onresult = function(event) {
+                let hasilTeks = event.results[0][0].transcript;
+                $('#konten-hasil').html(`Hasil deteksi suara:<br><strong class='text-indigo' style='font-size:0.85rem;'>"${hasilTeks}"</strong>`);
+                resetTombolVoice();
+                showToast("Suara berhasil dikonversi!");
+            };
 
-        pengenalSuara.onspeechend = function() {
-            pengenalSuara.stop();
-        };
+            pengenalSuara.onspeechend = function() {
+                pengenalSuara.stop();
+            };
 
-        pengenalSuara.onerror = function(event) {
-            $('#konten-hasil').html(`<span class='text-danger'>Error pengenalan: ${event.error}</span>`);
-            resetTombolVoice();
-        };
+            pengenalSuara.onerror = function(event) {
+                $('#konten-hasil').html(`<span class='text-danger'>Error pengenalan: ${event.error}</span>`);
+                resetTombolVoice();
+            };
+        } catch(e) {
+            console.log("Voice recognition sudah berjalan.");
+        }
     }
 }
 

@@ -1,0 +1,184 @@
+:root {
+    --primary-indigo: #6366f1;
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    --bg-light-app: #f8fafc;
+    --card-glass-bg: rgba(255, 255, 255, 0.85);
+    --border-glass: rgba(255, 255, 255, 0.3);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --shadow-premium: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -5px rgba(0, 0, 0, 0.03);
+}
+
+/* DARK MODE PALETTE */
+body.dark-mode {
+    --bg-light-app: #0f172a;
+    --card-glass-bg: rgba(30, 41, 59, 0.75);
+    --border-glass: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+}
+
+/* BASE BODY - DIBUAT MENGIKUTI LAYAR PENUH */
+body {
+    background-color: var(--bg-light-app); 
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+}
+
+/* WRAPPER RESPONSIVE: RESPOND TERHADAP DESKTOP & MOBILE */
+.mobile-wrapper {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg-light-app);
+    position: relative; 
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* AREA KONTEN MENYESUAIKAN TINGGI OTOMATIS */
+.content-area {
+    padding: 20px;
+    flex: 1;
+    padding-bottom: 90px; /* Jarak aman agar konten bawah tidak tertutup navbar */
+    box-sizing: border-box;
+}
+
+/* NAVBAR BAWAH RESPONSIVE: MENGIKUTI LEBAR PERANGKAT */
+.navbar-bottom {
+    position: fixed !important; 
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-glass);
+    z-index: 1030;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 10px 16px 10px;
+    margin: 0;
+}
+
+/* TOMBOL NAVIGASI */
+.nav-btn {
+    background: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.25s ease;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 16px;
+}
+
+.nav-btn .nav-icon { font-size: 1.3rem; margin-bottom: 2px; }
+.nav-btn .nav-text { font-size: 0.75rem; font-weight: 600; }
+.nav-btn.active { color: var(--primary-indigo); background: rgba(99, 102, 241, 0.08); }
+
+/* CARDS GLASSMORPHISM */
+.smart-card {
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    box-shadow: var(--shadow-premium);
+}
+
+/* KELOMPOK GRID MENU BULAT */
+.feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.feature-item:active {
+    transform: scale(0.92);
+}
+
+.feature-icon-circle {
+    width: 55px;
+    height: 55px;
+    background: var(--primary-gradient);
+    color: white;
+    font-size: 1.4rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 12px rgba(99, 102, 241, 0.25);
+    margin-bottom: 6px;
+}
+
+.feature-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* SPLASH SCREEN & LOGIN PAGE (FULL SCREEN RESPONSIVE) */
+.splash-container, .login-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+}
+.splash-container { background: var(--primary-gradient); }
+.login-container { background: var(--bg-light-app); }
+
+.login-card {
+    background: var(--card-glass-bg);
+    border: 1px solid var(--border-glass);
+    padding: 40px 30px;
+    border-radius: 28px;
+    box-shadow: var(--shadow-premium);
+    width: 100%;
+    max-width: 400px; /* Membatasi lebar form login di komputer agar tetap proporsional */
+}
+.splash-logo { font-size: 5rem; animation: pulse 2s infinite; }
+.login-icon { font-size: 3.5rem; margin-bottom: 12px; }
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* UTILITIES BUTTONS */
+.btn-indigo { background: var(--primary-gradient); color: white; border: none; border-radius: 12px; }
+.btn-indigo:hover { opacity: 0.95; color: white; }
+.btn-outline-indigo { border: 1.5px solid var(--primary-indigo); color: var(--primary-indigo); font-weight: 600; border-radius: 12px; background: transparent; }
+.btn-outline-indigo:hover { background: var(--primary-gradient); color: white; }
+.bg-indigo-gradient { background: var(--primary-gradient); }
+.text-indigo { color: var(--primary-indigo); }
+.small { font-size: 0.85rem; }
+
+/* OPTIMASI LAYAR DEKSTOP (DIBUAT AGAR KONTEN GRID BERJEJER RAPI JIKA DI LAYAR LEBAR) */
+@media (min-width: 768px) {
+    .content-area {
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    #schedule-list, #task-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+}

@@ -11,7 +11,7 @@ $(document).ready(function() {
     }, 2000);
     
     loadTasks();
-    fetchQuote();
+    fetchQuote(); // Menggunakan fungsi quote baru yang aman
     loadSchedule();
 });
 
@@ -45,9 +45,9 @@ function showToast(message) {
     toastElement.show();
 }
 
-// MANAGEMENT JADWAL KULIAH LANGSUNG (ANTI-CORS & ANTI-GAGAL)
+// MANAGEMENT JADWAL KULIAH LANGSUNG (SENIN - JUMAT)
 function loadSchedule() {
-    // Data jadwal disimpan langsung di dalam array objek agar tidak diblokir oleh browser
+    // Data jadwal kuliah lengkap dari Senin sampai Jumat (Bisa kamu edit isinya di sini)
     const data = [
       { 
         "hari": "Senin",
@@ -62,7 +62,7 @@ function loadSchedule() {
         "jam": "13:00 - 15:30", 
         "ruang": "Aula Gedung B",
         "dosen": "Dr. Irwan Setiawan"
-      }
+      },
       { 
         "hari": "Kamis",
         "matkul": "Sistem Informasi Akuntansi", 
@@ -77,25 +77,19 @@ function loadSchedule() {
         "ruang": "Masjid Kampus / Gd. C",
         "dosen": "Ustadz H. Sofyan, M.Ag."
       }
-    
     ];
-
-    // Validasi awal untuk memastikan data internal berbentuk Array valid
-    if (!data || !Array.isArray(data)) {
-        $('#schedule-list').html('<div class="text-center py-3 text-muted small">Format data jadwal tidak valid.</div>');
-        tampilkanHighlightBawaan();
-        return;
-    }
 
     const urutanHari = ["Senin", "Selasa", "Kamis", "Jumat"];
     let kelompokJadwal = { "Senin": [], "Selasa": [], "Kamis": [], "Jumat": [] };
 
     // Mengelompokkan data berdasarkan properti hari
-    data.forEach(item => {
-        if (item && item.hari && kelompokJadwal[item.hari]) {
-            kelompokJadwal[item.hari].push(item);
-        }
-    });
+    if (Array.isArray(data)) {
+        data.forEach(item => {
+            if (item && item.hari && kelompokJadwal[item.hari]) {
+                kelompokJadwal[item.hari].push(item);
+            }
+        });
+    }
 
     let listHtml = '';
     urutanHari.forEach(hari => {
@@ -122,7 +116,7 @@ function loadSchedule() {
             listHtml += `</div>`;
         }
     });
-    $('#schedule-list').html(listHtml);
+    $('#schedule-list').html(listHtml || '<div class="text-center py-3 text-muted small">Tidak ada jadwal kuliah.</div>');
 
     // AREA HIGHLIGHT BERANDA UTAMA (DASHBOARD)
     const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
@@ -143,12 +137,6 @@ function loadSchedule() {
         highlightHtml = `<div class="text-center py-2 text-muted small" style="font-size: 0.75rem;">😎 Hari ini (${hariIni}) tidak ada jadwal kuliah.</div>`;
     }
     $('#schedule-highlight').html(highlightHtml);
-}
-
-// Fungsi pembantu pendukung jika penayangan dashboard membutuhkan fallback
-function tampilkanHighlightBawaan() {
-    const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
-    $('#schedule-highlight').html(`<div class="text-center py-2 text-muted small" style="font-size: 0.75rem;">😎 Hari ini (${hariIni}) tidak ada jadwal kuliah.</div>`);
 }
 
 // STORAGE TUGAS / MISI
@@ -182,17 +170,18 @@ function loadTasks() {
     $('#task-list').html(html);
 }
 
-// AMBIL API RANDOM QUOTE ACADEMIC
-async function fetchQuote() {
-    try {
-        const response = await fetch('https://api.quotable.io/random');
-        if (!response.ok) throw new Error('API Error');
-        const data = await response.json();
-        $('#quote-area').text(`"${data.content}" - ${data.author}`);
-    } catch (e) {
-        // Fallback jika API eksternal down, teks bawaan ini tetap muncul
-        $('#quote-area').text("Tetap semangat kuliah di Universitas Ma'soem!");
-    }
+// AMBIL QUOTE SECARA LOKAL (SOLUSI ANTI-STUCK KARENA API LUAR DOWN)
+function fetchQuote() {
+    const quotes = [
+        "Pendidikan adalah senjata paling mematikan di dunia, karena dengan itu Anda bisa mengubah dunia. - Nelson Mandela",
+        "Kegagalan adalah batu loncatan menuju keberhasilan. Tetap semangat kuliahnya!",
+        "Hari ini berjuang, besok memakai toga bersama orang tua tercinta.",
+        "Jangan serahkan masa depanmu pada kemalasan. Mari kuliah dengan giat di Universitas Ma'soem!",
+        "Fokus pada proses, hasil tidak akan pernah mengkhianati usaha."
+    ];
+    // Ambil acak satu kalimat dari array di atas
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+    $('#quote-area').text(randomQuote);
 }
 
 function toggleTheme() {
@@ -205,15 +194,12 @@ function toggleTheme() {
 // =========================================================
 
 function jalankanFitur(nomor) {
-    // Reset visual komponen dynamic box hasil
     $('#box-hasil-fitur').slideDown();
     $('#webcam-preview').addClass('d-none');
     $('#btn-action-fitur').addClass('d-none').removeAttr('onclick');
     matikanKamera();
 
-    // -----------------------------------------------------
-    // FITUR 1: CAMERA API (Akses Kamera Depan/Belakang)
-    // -----------------------------------------------------
+    // FITUR 1: CAMERA API
     if (nomor === 1) {
         $('#judul-hasil').text("📷 Fitur 1: Camera API");
         $('#konten-hasil').html("Meminta izin akses modul kamera internal...");
@@ -226,8 +212,6 @@ function jalankanFitur(nomor) {
                 video.srcObject = stream;
                 $('#webcam-preview').removeClass('d-none');
                 $('#konten-hasil').html("<span class='text-success fw-bold'>Kamera Aktif!</span> Perangkat keras berfungsi penuh.");
-                
-                // Pasang tombol untuk mematikan stream kamera
                 $('#btn-action-fitur').text("Matikan Kamera").removeClass('d-none').attr('onclick', 'matikanKameraDanTutup()');
                 showToast("Akses Kamera Berhasil!");
             })
@@ -240,9 +224,7 @@ function jalankanFitur(nomor) {
         }
     } 
     
-    // -----------------------------------------------------
-    // FITUR 2: GEOLOCATION API (Membaca Koordinat Global GPS)
-    // -----------------------------------------------------
+    // FITUR 2: GEOLOCATION API
     else if (nomor === 2) {
         $('#judul-hasil').text("📍 Fitur 2: Geolocation API");
         $('#konten-hasil').html("Mencari sinyal satelit lokasi Anda...");
@@ -256,7 +238,7 @@ function jalankanFitur(nomor) {
                         <strong>Lokasi Anda Berhasil Dikunci:</strong><br>
                         Latitude: <span class='text-indigo'>${lat}</span><br>
                         Longitude: <span class='text-indigo'>${lon}</span><br>
-                        <a href='https://maps.google.com/?q=${lat},${lon}' target='_blank' class='btn btn-xs btn-outline-indigo mt-2 py-0.5 px-2' style='font-size:0.7rem; text-decoration:none;'>Buka Peta Google</a>
+                        <a href='https://www.google.com/maps?q=${lat},${lon}' target='_blank' class='btn btn-xs btn-outline-indigo mt-2 py-0.5 px-2' style='font-size:0.7rem; text-decoration:none;'>Buka Peta Google</a>
                     `);
                     showToast("Lokasi Berhasil Didapatkan!");
                 },
@@ -271,19 +253,16 @@ function jalankanFitur(nomor) {
         }
     } 
     
-    // -----------------------------------------------------
-    // FITUR 3: VOICE RECOGNITION API (Pengenalan Ucapan)
-    // -----------------------------------------------------
+    // FITUR 3: VOICE RECOGNITION API
     else if (nomor === 3) {
         $('#judul-hasil').text("🎙️ Fitur 3: Voice Recognition API");
         $('#konten-hasil').html("Silakan tekan tombol di bawah, izinkan mic, lalu berbicaralah...");
 
-        // Cek kecocokan prefix Web Speech API di berbagai browser
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
         if (SpeechRecognition) {
             pengenalSuara = new SpeechRecognition();
-            pengenalSuara.lang = 'id-ID'; // Mengatur deteksi ucapan Bahasa Indonesia
+            pengenalSuara.lang = 'id-ID';
             pengenalSuara.interimResults = false;
             pengenalSuara.maxAlternatives = 1;
 
@@ -294,7 +273,6 @@ function jalankanFitur(nomor) {
     }
 }
 
-// Fungsi Pendukung Tambahan Fitur Kamera
 function matikanKamera() {
     if (kameraStream) {
         kameraStream.getTracks().forEach(track => track.stop());
@@ -302,7 +280,6 @@ function matikanKamera() {
     }
 }
 
-// Fungsi Pendukung menonaktifkan kamera via tombol interface
 function matikanKameraDanTutup() {
     matikanKamera();
     $('#webcam-preview').addClass('d-none');
@@ -311,7 +288,6 @@ function matikanKameraDanTutup() {
     showToast("Kamera dimatikan.");
 }
 
-// Fungsi Pendukung Tambahan Fitur Voice Recognition
 function mulaiMendengar() {
     if (pengenalSuara) {
         try {

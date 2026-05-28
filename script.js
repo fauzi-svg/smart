@@ -45,81 +45,107 @@ function showToast(message) {
     toastElement.show();
 }
 
-// MANAGEMENT JADWAL KULIAH DARI FILE JSON
+// MANAGEMENT JADWAL KULIAH LANGSUNG (ANTI-CORS & ANTI-GAGAL)
 function loadSchedule() {
-    $.getJSON('jadwal.json', function(data) {
-        // Validasi awal untuk memastikan data JSON yang diterima berbentuk Array valid
-        if (!data || !Array.isArray(data)) {
-            $('#schedule-list').html('<div class="text-center py-3 text-muted small">Format data jadwal tidak valid.</div>');
-            tampilkanHighlightBawaan();
-            return;
+    // Data jadwal disimpan langsung di dalam array objek agar tidak diblokir oleh browser
+    const data = [
+      { 
+        "hari": "Senin",
+        "matkul": "Mobile Web", 
+        "jam": "08:00 - 10:30", 
+        "ruang": "Lab Komputer 3",
+        "dosen": "Ahmad Fauzi, M.T."
+      },
+      { 
+        "hari": "Selasa",
+        "matkul": "Etika Profesi", 
+        "jam": "13:00 - 15:30", 
+        "ruang": "Aula Gedung B",
+        "dosen": "Dr. Irwan Setiawan"
+      }
+      { 
+        "hari": "Kamis",
+        "matkul": "Sistem Informasi Akuntansi", 
+        "jam": "09:45 - 12:15", 
+        "ruang": "Ruang 302",
+        "dosen": "Siti Rahma, S.E., M.Si."
+      },
+      { 
+        "hari": "Jumat",
+        "matkul": "Pendidikan Agama", 
+        "jam": "13:30 - 15:10", 
+        "ruang": "Masjid Kampus / Gd. C",
+        "dosen": "Ustadz H. Sofyan, M.Ag."
+      }
+    
+    ];
+
+    // Validasi awal untuk memastikan data internal berbentuk Array valid
+    if (!data || !Array.isArray(data)) {
+        $('#schedule-list').html('<div class="text-center py-3 text-muted small">Format data jadwal tidak valid.</div>');
+        tampilkanHighlightBawaan();
+        return;
+    }
+
+    const urutanHari = ["Senin", "Selasa", "Kamis", "Jumat"];
+    let kelompokJadwal = { "Senin": [], "Selasa": [], "Kamis": [], "Jumat": [] };
+
+    // Mengelompokkan data berdasarkan properti hari
+    data.forEach(item => {
+        if (item && item.hari && kelompokJadwal[item.hari]) {
+            kelompokJadwal[item.hari].push(item);
         }
+    });
 
-        const urutanHari = ["Senin", "Selasa", "Kamis", "Jumat"];
-        let kelompokJadwal = { "Senin": [], "Selasa": [], "Kamis": [], "Jumat": [] };
-
-        data.forEach(item => {
-            if (item && item.hari && kelompokJadwal[item.hari]) {
-                kelompokJadwal[item.hari].push(item);
-            }
-        });
-
-        let listHtml = '';
-        urutanHari.forEach(hari => {
-            const daftarMatkul = kelompokJadwal[hari];
-            if (daftarMatkul && daftarMatkul.length > 0) {
+    let listHtml = '';
+    urutanHari.forEach(hari => {
+        const daftarMatkul = kelompokJadwal[hari];
+        if (daftarMatkul && daftarMatkul.length > 0) {
+            listHtml += `
+                <div class="day-group mb-2">
+                    <div class="pb-1 mb-2 border-bottom" style="border-color: rgba(99, 102, 241, 0.3) !important;">
+                        <span class="fw-bold text-indigo" style="font-size: 0.8rem;">📅 Hari ${hari}</span>
+                    </div>
+            `;
+            daftarMatkul.forEach(item => {
                 listHtml += `
-                    <div class="day-group mb-2">
-                        <div class="pb-1 mb-2 border-bottom" style="border-color: rgba(99, 102, 241, 0.3) !important;">
-                            <span class="fw-bold text-indigo" style="font-size: 0.8rem;">📅 Hari ${hari}</span>
+                    <div class="smart-card p-2.5 mb-2" style="border-left: 3px solid var(--primary-indigo) !important;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong style="font-size: 0.8rem; color: var(--text-main);">${item.matkul}</strong>
+                            <span class="badge bg-light text-primary border" style="font-size: 0.65rem;">📍 ${item.ruang}</span>
                         </div>
-                `;
-                daftarMatkul.forEach(item => {
-                    listHtml += `
-                        <div class="smart-card p-2.5 mb-2" style="border-left: 3px solid var(--primary-indigo) !important;">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <strong style="font-size: 0.8rem; color: var(--text-main);">${item.matkul}</strong>
-                                <span class="badge bg-light text-primary border" style="font-size: 0.65rem;">📍 ${item.ruang}</span>
-                            </div>
-                            <div style="font-size: 0.72rem; color: var(--text-muted);">Dosen: ${item.dosen}</div>
-                            <div class="text-warning fw-semibold" style="font-size: 0.7rem;">⏰ ${item.jam} WIB</div>
-                        </div>
-                    `;
-                });
-                listHtml += `</div>`;
-            }
-        });
-        $('#schedule-list').html(listHtml);
-
-        // AREA HIGHLIGHT BERANDA UTAMA (DASHBOARD)
-        const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
-        let highlightHtml = '';
-        const matkulHariIni = data.filter(item => item && item.hari && item.hari.toLowerCase() === hariIni.toLowerCase());
-
-        if (matkulHariIni.length > 0) {
-            highlightHtml += `<p class="text-success small fw-bold mb-1">✨ ${matkulHariIni.length} Kelas Hari Ini (${hariIni}):</p>`;
-            matkulHariIni.forEach(item => {
-                highlightHtml += `
-                    <div class="p-2 mb-1 border-start border-3 border-success rounded-3" style="background: rgba(16, 185, 129, 0.05); font-size: 0.75rem;">
-                        <span class="fw-bold d-block" style="color: var(--text-main);">${item.matkul}</span>
-                        <span class="text-muted" style="font-size: 0.7rem;">⏰ ${item.jam} | Ruang: ${item.ruang}</span>
+                        <div style="font-size: 0.72rem; color: var(--text-muted);">Dosen: ${item.dosen}</div>
+                        <div class="text-warning fw-semibold" style="font-size: 0.7rem;">⏰ ${item.jam} WIB</div>
                     </div>
                 `;
             });
-        } else {
-            highlightHtml = `<div class="text-center py-2 text-muted small" style="font-size: 0.75rem;">😎 Hari ini (${hariIni}) tidak ada jadwal kuliah.</div>`;
+            listHtml += `</div>`;
         }
-        $('#schedule-highlight').html(highlightHtml);
-
-    }).fail(function() {
-        // Cegah aplikasi stuck jika jadwal.json error 404 (tidak ditemukan) saat deploy
-        console.error("Gagal memuat file jadwal.json. Pastikan file tersedia di root folder.");
-        $('#schedule-list').html('<div class="text-center py-3 text-muted small">Gagal memuat daftar jadwal kuliahan.</div>');
-        tampilkanHighlightBawaan();
     });
+    $('#schedule-list').html(listHtml);
+
+    // AREA HIGHLIGHT BERANDA UTAMA (DASHBOARD)
+    const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
+    let highlightHtml = '';
+    const matkulHariIni = data.filter(item => item && item.hari && item.hari.toLowerCase() === hariIni.toLowerCase());
+
+    if (matkulHariIni.length > 0) {
+        highlightHtml += `<p class="text-success small fw-bold mb-1">✨ ${matkulHariIni.length} Kelas Hari Ini (${hariIni}):</p>`;
+        matkulHariIni.forEach(item => {
+            highlightHtml += `
+                <div class="p-2 mb-1 border-start border-3 border-success rounded-3" style="background: rgba(16, 185, 129, 0.05); font-size: 0.75rem;">
+                    <span class="fw-bold d-block" style="color: var(--text-main);">${item.matkul}</span>
+                    <span class="text-muted" style="font-size: 0.7rem;">⏰ ${item.jam} | Ruang: ${item.ruang}</span>
+                </div>
+            `;
+        });
+    } else {
+        highlightHtml = `<div class="text-center py-2 text-muted small" style="font-size: 0.75rem;">😎 Hari ini (${hariIni}) tidak ada jadwal kuliah.</div>`;
+    }
+    $('#schedule-highlight').html(highlightHtml);
 }
 
-// Fungsi pembantu pendukung jika pembacaan file JSON gagal
+// Fungsi pembantu pendukung jika penayangan dashboard membutuhkan fallback
 function tampilkanHighlightBawaan() {
     const hariIni = new Date().toLocaleDateString('id-ID', { weekday: 'long' });
     $('#schedule-highlight').html(`<div class="text-center py-2 text-muted small" style="font-size: 0.75rem;">😎 Hari ini (${hariIni}) tidak ada jadwal kuliah.</div>`);
@@ -156,7 +182,7 @@ function loadTasks() {
     $('#task-list').html(html);
 }
 
-// AMBUL API RANDOM QUOTE ACADEMIC
+// AMBIL API RANDOM QUOTE ACADEMIC
 async function fetchQuote() {
     try {
         const response = await fetch('https://api.quotable.io/random');
@@ -173,7 +199,6 @@ function toggleTheme() {
     $('body').toggleClass('dark-mode');
     showToast("Tema berhasil dialihkan!");
 }
-
 
 // =========================================================
 // LOGIKA HARDWARE WEB API: CAMERA, GEOLOCATION, VOICE RECOG
